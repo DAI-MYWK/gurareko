@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLMを活用した分類案作成のメリット - グラフィックレコーディング</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=M+PLUS+1:wght@400;500;700&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'M PLUS 1', sans-serif;
+      background-color: #f8fafc;
+      color: #334155;
+      line-height: 1.4;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background-color: white;
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .container::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%239369F4' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+      z-index: 0;
+      opacity: 0.5;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .title {
+      font-size: 32px;
+      font-weight: 700;
+      background: linear-gradient(90deg, #4716B8, #9369F4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      position: relative;
+      padding-bottom: 8px;
+    }
+
+    .title::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, #4716B8, #9369F4);
+      border-radius: 2px;
+    }
+
+    .date {
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .main-content {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .column {
+      flex: 1 1 calc(33.333% - 20px);
+      min-width: 300px;
+    }
+
+    .section {
+      margin-bottom: 30px;
+      position: relative;
+    }
+
+    .section-title {
+      font-size: 18px;
+      color: #1e40af;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
+
+    .section-title::before {
+      content: "🔍";
+      margin-right: 8px;
+    }
+
+    .section-title::after {
+      content: "";
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, #6D3FD6, #9369F4);
+      border-radius: 1px;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+      position: relative;
+      overflow: hidden;
+      border: 2px solid transparent;
+    }
+
+    .card-title {
+      font-size: 16px;
+      color: #475569;
+      margin-bottom: 10px;
+      font-weight: 500;
+      position: relative;
+      padding-left: 20px;
+    }
+
+    .card-title::before {
+      content: "📝";
+      position: absolute;
+      left: 0;
+    }
+
+    .card-content {
+      font-size: 14px;
+    }
+
+    .step {
+      position: relative;
+      padding-left: 25px;
+      margin-bottom: 15px;
+    }
+
+    .step::before {
+      content: "✏️";
+      position: absolute;
+      left: 0;
+    }
+
+    .point {
+      position: relative;
+      padding-left: 20px;
+      margin-bottom: 10px;
+    }
+
+    .point::before {
+      content: "•";
+      position: absolute;
+      left: 8px;
+      color: #5A2AC7;
+      font-size: 18px;
+    }
+
+    .highlight {
+      background: linear-gradient(transparent 60%, rgba(147, 105, 244, 0.3) 40%);
+      font-weight: 500;
+    }
+
+    .emphasis {
+      color: #4716B8;
+      font-weight: 500;
+    }
+
+    .arrow {
+      position: relative;
+      margin: 15px 0;
+      text-align: center;
+    }
+
+    .arrow::before {
+      content: "↓";
+      font-size: 24px;
+      color: #6D3FD6;
+    }
+
+    .tag {
+      display: inline-block;
+      background: #f1f5f9;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin: 2px;
+      font-size: 12px;
+      border: 1px dashed #9369F4;
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+      position: relative;
+    }
+
+    .comparison-table::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(5px);
+      z-index: -1;
+      border-radius: 8px;
+    }
+
+    .comparison-table th, .comparison-table td {
+      padding: 8px;
+      text-align: left;
+      font-size: 13px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .comparison-table th {
+      background-color: #f8fafc;
+      color: #1e40af;
+      font-weight: 500;
+    }
+
+    .comparison-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin: 15px 0;
+    }
+
+    .skill-card {
+      padding: 10px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      position: relative;
+    }
+
+    .skill-title {
+      font-weight: 500;
+      color: #1e40af;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    .skill-desc {
+      font-size: 12px;
+    }
+
+    .bubble {
+      position: relative;
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 10px 15px;
+      margin-bottom: 15px;
+      border-left: 3px solid #6D3FD6;
+    }
+
+    .bubble::after {
+      content: "";
+      position: absolute;
+      top: 15px;
+      left: -8px;
+      width: 15px;
+      height: 15px;
+      background: #f8fafc;
+      border-left: 3px solid #6D3FD6;
+      transform: rotate(45deg);
+      z-index: -1;
+    }
+
+    .footer {
+      margin-top: 30px;
+      text-align: right;
+      font-size: 12px;
+      color: #64748b;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hand-drawn-box {
+      position: relative;
+      padding: 15px;
+      margin: 15px 0;
+    }
+
+    .hand-drawn-box::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border: 2px solid #6D3FD6;
+      border-radius: 12px;
+      transform: rotate(-0.5deg);
+      z-index: -1;
+    }
+
+    .hand-drawn-box.important {
+      background-color: rgba(147, 105, 244, 0.1);
+    }
+
+    .hand-drawn-box.important::before {
+      border-width: 3px;
+      border-color: #4716B8;
+    }
+
+    .icon-list {
+      list-style: none;
+    }
+
+    .icon-list li {
+      position: relative;
+      padding-left: 25px;
+      margin-bottom: 8px;
+    }
+
+    .icon-list li::before {
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+
+    .icon-list li:nth-child(1)::before {
+      content: "💭";
+    }
+
+    .icon-list li:nth-child(2)::before {
+      content: "🔄";
+    }
+
+    .icon-list li:nth-child(3)::before {
+      content: "📈";
+    }
+
+    .icon-list li:nth-child(4)::before {
+      content: "🛠️";
+    }
+
+    @media (max-width: 992px) {
+      .column {
+        flex: 1 1 calc(50% - 20px);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .column {
+        flex: 1 1 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 class="title">LLMを活用した分類案作成のメリット</h1>
+      <div class="date">2025年4月8日</div>
+    </div>
+
+    <div class="main-content">
+      <div class="column">
+        <div class="section">
+          <h2 class="section-title">Step1：分類案の作成</h2>
+          <div class="card">
+            <div class="step">
+              <span class="emphasis">テキストデータをLLMにインプット</span>
+              <div class="point">「なるべく<span class="highlight">多様な観点から分類案を5パターン作成</span>して」といった指示が可能。</div>
+              <div class="point">LLMは指示に従い、多数の分類案を<span class="highlight">短時間</span>で作成。</div>
+              <div class="point">複数の分類案を比較しながら議論・選択できるため、<span class="highlight">今まで人間だけでは気づかなかった分類</span>が生まれる。</div>
+            </div>
+            
+            <div class="arrow"></div>
+            
+            <div class="step">
+              <span class="emphasis">分類案の絞り込み・調整</span>
+              <div class="point">「30個できた分類を、10個に絞ってまとめ直して」という<span class="highlight">柔軟な依頼</span>も可能。</div>
+              <div class="point">分類粒度や数の調整も簡単に行える。</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">Step2：履歴データの分類・集計</h2>
+          <div class="card">
+            <div class="step">
+              <span class="emphasis">選定した分類案に基づき、LLMが自動分類</span>
+              <div class="point">分類案が決定すれば、<span class="highlight">5000件のデータを自動で分類</span>。</div>
+              <div class="point">分類・集計結果を短時間で出力可能。</div>
+            </div>
+            
+            <div class="arrow"></div>
+            
+            <div class="step">
+              <span class="emphasis">分類結果の確認・修正</span>
+              <div class="point">一部の曖昧な分類結果だけを人間がチェック・修正。</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">特に重要なポイント</h2>
+          <div class="hand-drawn-box important">
+            <div class="bubble">
+              <span class="emphasis">複数の分類案を提示することで「比較による気付き」が生まれる。</span>
+              <div class="point">一つの分類案では見えなかった傾向が、別の分類案で鮮明になることがある。</div>
+              <div class="point">「分類案Aはわかりづらかったが、分類案Bだと傾向が明確になり、打ち手が具体的になる」といった改善につながる。</div>
+            </div>
+            
+            <div class="bubble">
+              <span class="emphasis">「傾向がわかりやすくなる分類を作って」という曖昧な指示ではAIは効果的な分類ができない。</span>
+              <div class="point">「<span class="highlight">多様な視点で複数パターン作って</span>」と明確に指示することで、多面的な分析が可能になる。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="column">
+        <div class="section">
+          <h2 class="section-title">従来手作業との比較</h2>
+          <div class="card">
+            <table class="comparison-table">
+              <tr>
+                <th>観点</th>
+                <th>従来（人間のみ）</th>
+                <th>LLM活用</th>
+              </tr>
+              <tr>
+                <td>分類案の数</td>
+                <td>少数の分類案しか作れない<br>（負担が大きいため）</td>
+                <td><span class="highlight">多数の分類案を作成可能</span><br>（5案以上も容易）</td>
+              </tr>
+              <tr>
+                <td>観点の多様性</td>
+                <td>属人的で限定的・気付きにくい</td>
+                <td>LLMが多様な視点から提案するため、<span class="highlight">新しい観点を発見可能</span></td>
+              </tr>
+              <tr>
+                <td>比較・議論のしやすさ</td>
+                <td>一案だけになりやすく、比較・判断が困難</td>
+                <td>複数案を比較することで、<span class="highlight">優れた分類案を選びやすく</span>なる</td>
+              </tr>
+              <tr>
+                <td>粒度の調整</td>
+                <td>非常に困難<br>（やり直しが負担大）</td>
+                <td><span class="highlight">容易</span>（分類案の数や粒度の再調整も柔軟に指示可能）</td>
+              </tr>
+              <tr>
+                <td>傾向把握のしやすさ</td>
+                <td>分類案次第<br>（作業後に傾向が掴めない場合あり）</td>
+                <td>傾向把握に適した分類案を複数試せるため、<span class="highlight">最適な分類を選択可能</span></td>
+              </tr>
+              <tr>
+                <td>作業時間</td>
+                <td>数日〜1週間以上</td>
+                <td><span class="highlight">数分〜数時間</span></td>
+              </tr>
+              <tr>
+                <td>心理的負担</td>
+                <td>非常に大きい</td>
+                <td><span class="highlight">軽減され、分析や議論に集中</span>できる</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">改善効果を最大化するためには</h2>
+          <div class="card">
+            <div class="hand-drawn-box">
+              <div class="card-title">プロンプトでの工夫例</div>
+              <div class="tag">明確な指示</div>
+              <div class="point">「分類名のみを返してください。説明不要。」と明示。</div>
+              <div class="point">「もし複数該当する場合は、最も強く関連する1つのみを選んでください。」という条件を付ける。</div>
+            </div>
+            
+            <div class="hand-drawn-box">
+              <div class="card-title">結果の安定化のための仕組み作り</div>
+              <div class="tag">後処理の自動化</div>
+              <div class="point">ExcelやPythonスクリプトを使い、LLMの分類結果のゆらぎや重複を後処理で統一する仕組みを用意。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="column">
+        <div class="section">
+          <h2 class="section-title">LLMを業務で有効に活用するためのポイント</h2>
+          <div class="card">
+            <div class="skills-grid">
+              <div class="skill-card">
+                <div class="skill-title">🔤 プロンプト設計のスキル</div>
+                <div class="skill-desc">「分類名だけ出力する」「1つだけ該当させる」など、<span class="highlight">意図を明確に伝える</span>スキルが必要。</div>
+                <div class="skill-desc">出力のばらつきを抑えるため、LLMが判断しやすい基準をプロンプトで指定する。</div>
+              </div>
+              
+              <div class="skill-card">
+                <div class="skill-title">👁️ データを見立てるスキル</div>
+                <div class="skill-desc">データの傾向を見抜き、どのような分類が業務に有益かを考える力が重要。</div>
+                <div class="skill-desc">そもそも<span class="highlight">適切な観点を指示できなければ</span>、分類の品質向上は難しい。</div>
+              </div>
+              
+              <div class="skill-card">
+                <div class="skill-title">📊 Excelスキル</div>
+                <div class="skill-desc">出力された分類結果を整形、集計、視覚化するために不可欠。</div>
+                <div class="skill-desc">LLMが作成した分類結果を<span class="highlight">ピボットテーブルやグラフで見やすく加工</span>できる能力。</div>
+              </div>
+              
+              <div class="skill-card">
+                <div class="skill-title">💻 プログラミングスキル</div>
+                <div class="skill-desc">LLMの出力を自動で処理し、集計作業を効率化する仕組みを作れる。</div>
+                <div class="skill-desc">「分類→集計→レポート作成」までを<span class="highlight">ワンストップで実施する自動化</span>が可能。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">分類プロセスの流れ</h2>
+          <div class="card">
+            <div class="hand-drawn-box">
+              <ol class="icon-list">
+                <li><span class="emphasis">多様な分類案の作成</span><br>LLMに複数パターンの分類案を作成させる</li>
+                <li><span class="emphasis">分類案の評価・選定</span><br>目的に合った最適な分類案を選ぶ</li>
+                <li><span class="emphasis">データの一括分類</span><br>選定した分類に基づき、大量データを自動処理</li>
+                <li><span class="emphasis">結果の調整・分析</span><br>分類結果をExcelなどで集計・可視化し、傾向を把握</li>
+              </ol>
+            </div>
+          </div>
+          
+          <div class="bubble">
+            <span class="emphasis">Point!</span> 「<span class="highlight">比較による気づき</span>」を得るために複数の分類案を作成することが重要です
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      作成日: 2025年4月8日 | 使用ツール: Claude 3.7 Sonnet
+    </div>
+  </div>
+</body>
+</html>

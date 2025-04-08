@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLMを活用した分類作業の効率化</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=M+PLUS+1:wght@400;700&display=swap');
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'M PLUS 1', sans-serif;
+      background-color: #f8fafc;
+      color: #334155;
+      line-height: 1.4;
+      padding: 20px;
+    }
+    
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      background-color: white;
+      border-radius: 24px;
+      box-shadow: 0 10px 25px rgba(71, 22, 184, 0.1);
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 30px 40px;
+      background: linear-gradient(135deg, rgba(71, 22, 184, 0.05), rgba(147, 105, 244, 0.2));
+      border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .title-container {
+      flex: 1;
+    }
+    
+    .title {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(90deg, #4716B8, #9369F4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
+      position: relative;
+    }
+    
+    .title::after {
+      content: "";
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 100%;
+      height: 10px;
+      background-image: url("data:image/svg+xml,%3Csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 0,5 C 50,15 50,-5 100,5' stroke='%235A2AC7' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: repeat-x;
+      background-size: 100px 10px;
+      opacity: 0.5;
+    }
+    
+    .subtitle {
+      font-size: 16px;
+      color: #475569;
+      font-weight: normal;
+    }
+    
+    .date {
+      color: #64748b;
+      font-size: 14px;
+      text-align: right;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    .main {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 20px;
+      gap: 20px;
+    }
+    
+    .column {
+      flex: 1;
+      min-width: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .section {
+      background-color: rgba(255, 255, 255, 0.8);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      position: relative;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
+    
+    .section::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      background: linear-gradient(45deg, #6D3FD6, #9369F4);
+      z-index: -1;
+      border-radius: 14px;
+      opacity: 0.3;
+    }
+    
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      border-bottom: 2px dashed #8054E5;
+      padding-bottom: 10px;
+    }
+    
+    .section-title {
+      font-size: 18px;
+      color: #1e40af;
+      font-weight: bold;
+      flex-grow: 1;
+    }
+    
+    .section-icon {
+      font-size: 20px;
+      color: #4716B8;
+    }
+    
+    .step {
+      margin-bottom: 15px;
+      position: relative;
+      padding-left: 30px;
+    }
+    
+    .step-number {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 24px;
+      height: 24px;
+      background-color: #6D3FD6;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    
+    .step-title {
+      font-weight: bold;
+      color: #1e40af;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    .step-content {
+      font-size: 14px;
+    }
+    
+    .bullet-list {
+      padding-left: 25px;
+      margin-bottom: 10px;
+    }
+    
+    .bullet-item {
+      position: relative;
+      margin-bottom: 8px;
+      padding-left: 5px;
+    }
+    
+    .bullet-item::before {
+      content: '';
+      position: absolute;
+      left: -15px;
+      top: 7px;
+      width: 6px;
+      height: 6px;
+      background-color: #5A2AC7;
+      border-radius: 50%;
+    }
+    
+    .emphasis {
+      background: linear-gradient(transparent 60%, rgba(147, 105, 244, 0.4) 40%);
+      font-weight: bold;
+      padding: 0 2px;
+    }
+    
+    .comparison {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .comparison th {
+      background-color: #6D3FD6;
+      color: white;
+      text-align: left;
+      padding: 10px;
+      border: 1px solid #8054E5;
+      font-weight: bold;
+    }
+    
+    .comparison td {
+      padding: 10px;
+      border: 1px solid #d1d5db;
+    }
+    
+    .comparison tr:nth-child(even) {
+      background-color: rgba(147, 105, 244, 0.05);
+    }
+    
+    .traditional {
+      color: #dc2626;
+    }
+    
+    .llm-benefit {
+      color: #16a34a;
+    }
+    
+    .arrow {
+      margin: 10px auto;
+      width: 30px;
+      height: 40px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+    
+    .arrow::before {
+      content: '';
+      position: absolute;
+      width: 4px;
+      height: 30px;
+      background-color: #6D3FD6;
+      border-radius: 2px;
+    }
+    
+    .arrow::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 12px solid #6D3FD6;
+    }
+    
+    .note {
+      background-color: rgba(128, 84, 229, 0.1);
+      border-left: 4px solid #6D3FD6;
+      padding: 10px 15px;
+      margin: 10px 0;
+      border-radius: 0 8px 8px 0;
+      font-size: 14px;
+    }
+    
+    .summary-item {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      gap: 10px;
+    }
+    
+    .summary-icon {
+      font-size: 20px;
+      color: #4716B8;
+      margin-top: 2px;
+    }
+    
+    .summary-text {
+      flex: 1;
+    }
+    
+    .footer {
+      padding: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: #64748b;
+      border-top: 1px dashed #e2e8f0;
+    }
+    
+    /* 手描き風の要素 */
+    .hand-drawn {
+      position: relative;
+    }
+    
+    .hand-drawn::before {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: -8px;
+      right: -8px;
+      bottom: -8px;
+      border: 2px solid #5A2AC7;
+      border-radius: 16px;
+      opacity: 0.4;
+      z-index: -1;
+      transform: rotate(-0.5deg);
+    }
+    
+    .hand-drawn::after {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: -6px;
+      right: -6px;
+      bottom: -6px;
+      border: 2px solid #8054E5;
+      border-radius: 14px;
+      opacity: 0.3;
+      z-index: -1;
+      transform: rotate(0.8deg);
+    }
+    
+    .bubble {
+      background-color: rgba(128, 84, 229, 0.1);
+      border-radius: 20px;
+      padding: 15px;
+      position: relative;
+      margin-bottom: 20px;
+    }
+    
+    .bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 20px;
+      width: 20px;
+      height: 20px;
+      background-color: rgba(128, 84, 229, 0.1);
+      transform: rotate(45deg);
+    }
+    
+    .connector {
+      position: absolute;
+      z-index: -1;
+    }
+    
+    @media (max-width: 992px) {
+      .column {
+        flex: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="title-container">
+        <h1 class="title">LLMを活用した分類作業の効率化</h1>
+        <p class="subtitle">データ分析と業務改善のためのグラフィックレコード</p>
+      </div>
+      <div class="date">
+        <span>📅 2025年4月8日</span>
+      </div>
+    </div>
+    
+    <div class="main">
+      <div class="column">
+        <div class="section hand-drawn">
+          <div class="section-header">
+            <span class="section-icon">📋</span>
+            <h2 class="section-title">LLMを使った分類手順</h2>
+          </div>
+          
+          <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-title">
+              <span>分類案の作成</span>
+              <span>🔍</span>
+            </div>
+            <div class="step-content">
+              <div class="bullet-list">
+                <div class="bullet-item">
+                  <strong>履歴テキストをLLMにインプット</strong>：数百〜数千件のテキストから、内容の<span class="emphasis">類似性をベース</span>に自動で分類案（クラスタ）を作成
+                </div>
+                <div class="bullet-item">
+                  分類案の数を指定（例：「10個以内の分類で提案」）すれば、<span class="emphasis">粒度の調整も可能</span>
+                </div>
+              </div>
+              
+              <div class="note">
+                <span>✏️</span> LLMの提示した案を人が確認し、必要なら<span class="emphasis">分類の統合・分割・名称調整</span>を行う
+              </div>
+            </div>
+          </div>
+          
+          <div class="arrow"></div>
+          
+          <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-title">
+              <span>履歴データの分類と集計</span>
+              <span>📊</span>
+            </div>
+            <div class="step-content">
+              <div class="bullet-list">
+                <div class="bullet-item">
+                  <strong>分類案に従って、履歴データをLLMで自動分類</strong>：LLMが定義した分類案に沿って、自動で各テキストを分類
+                </div>
+                <div class="bullet-item">
+                  集計結果も<span class="emphasis">自動的に算出</span>される
+                </div>
+              </div>
+              
+              <div class="note">
+                <span>🔍</span> 一部、LLMが判断しにくい曖昧な問い合わせのみ、人間が確認・修正
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="section">
+          <div class="section-header">
+            <span class="section-icon">⚖️</span>
+            <h2 class="section-title">分類案作成の比較</h2>
+          </div>
+          
+          <table class="comparison">
+            <tr>
+              <th>項目</th>
+              <th>従来（人力）</th>
+              <th>LLMを利用</th>
+            </tr>
+            <tr>
+              <td><strong>時間</strong></td>
+              <td class="traditional">数日〜1週間程度</td>
+              <td class="llm-benefit">数十分〜数時間程度</td>
+            </tr>
+            <tr>
+              <td><strong>粒度</strong></td>
+              <td class="traditional">属人的・ばらつきが大きい</td>
+              <td class="llm-benefit">一定の基準で統一される</td>
+            </tr>
+            <tr>
+              <td><strong>負荷</strong></td>
+              <td class="traditional">極めて大きい（担当者が疲弊）</td>
+              <td class="llm-benefit">大幅に軽減（修正程度）</td>
+            </tr>
+            <tr>
+              <td><strong>網羅性</strong></td>
+              <td class="traditional">見落としや偏りが多い</td>
+              <td class="llm-benefit">客観的・網羅的</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      
+      <div class="column">
+        <div class="section">
+          <div class="section-header">
+            <span class="section-icon">📝</span>
+            <h2 class="section-title">分類作業（5000件）の比較</h2>
+          </div>
+          
+          <table class="comparison">
+            <tr>
+              <th>項目</th>
+              <th>従来（人力）</th>
+              <th>LLMを利用</th>
+            </tr>
+            <tr>
+              <td><strong>時間</strong></td>
+              <td class="traditional">約5営業日</td>
+              <td class="llm-benefit">数分〜数時間</td>
+            </tr>
+            <tr>
+              <td><strong>精度</strong></td>
+              <td class="traditional">疲労やミスによるバラつきあり</td>
+              <td class="llm-benefit">均質・安定した品質</td>
+            </tr>
+            <tr>
+              <td><strong>負荷</strong></td>
+              <td class="traditional">極めて高い（繰り返し作業）</td>
+              <td class="llm-benefit">低い（最終確認のみ）</td>
+            </tr>
+            <tr>
+              <td><strong>再分析</strong></td>
+              <td class="traditional">非常に困難（再実施の負担大）</td>
+              <td class="llm-benefit">再分析が容易</td>
+            </tr>
+          </table>
+          
+          <div class="bubble">
+            <p>従来の方法では<span class="emphasis">5営業日</span>かかっていた作業が、LLMの活用により<span class="emphasis">数時間以内</span>に短縮！</p>
+          </div>
+        </div>
+        
+        <div class="section hand-drawn">
+          <div class="section-header">
+            <span class="section-icon">📈</span>
+            <h2 class="section-title">作業フロー比較図</h2>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+            <div style="text-align: center; flex: 1;">
+              <div style="font-weight: bold; color: #dc2626; margin-bottom: 10px;">従来の方法</div>
+              <div style="background-color: rgba(220, 38, 38, 0.1); border-radius: 10px; padding: 15px; height: 200px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                  <span style="font-size: 24px;">👩‍💼</span>
+                  <p>分類案作成</p>
+                </div>
+                <div style="border-left: 2px dashed #dc2626; height: 30px; margin: 0 auto;"></div>
+                <div>
+                  <span style="font-size: 24px;">📄</span>
+                  <p>手動分類</p>
+                </div>
+                <div style="border-left: 2px dashed #dc2626; height: 30px; margin: 0 auto;"></div>
+                <div>
+                  <span style="font-size: 24px;">📊</span>
+                  <p>集計・分析</p>
+                </div>
+              </div>
+              <div style="margin-top: 10px; color: #dc2626;">
+                <p>5〜7日</p>
+              </div>
+            </div>
+            
+            <div style="margin: 0 20px; display: flex; align-items: center;">
+              <div style="font-size: 24px;">➡️</div>
+            </div>
+            
+            <div style="text-align: center; flex: 1;">
+              <div style="font-weight: bold; color: #16a34a; margin-bottom: 10px;">LLM活用</div>
+              <div style="background-color: rgba(22, 163, 74, 0.1); border-radius: 10px; padding: 15px; height: 200px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                  <span style="font-size: 24px;">🤖</span>
+                  <p>自動分類案作成</p>
+                </div>
+                <div style="border-left: 2px dashed #16a34a; height: 20px; margin: 0 auto;"></div>
+                <div>
+                  <span style="font-size: 24px;">👍</span>
+                  <p>人間による確認</p>
+                </div>
+                <div style="border-left: 2px dashed #16a34a; height: 20px; margin: 0 auto;"></div>
+                <div>
+                  <span style="font-size: 24px;">⚡</span>
+                  <p>自動分類・集計</p>
+                </div>
+              </div>
+              <div style="margin-top: 10px; color: #16a34a;">
+                <p>数時間</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="column">
+        <div class="section hand-drawn">
+          <div class="section-header">
+            <span class="section-icon">✨</span>
+            <h2 class="section-title">結果的な改善ポイントまとめ</h2>
+          </div>
+          
+          <div class="summary-item">
+            <div class="summary-icon">⏱️</div>
+            <div class="summary-text">
+              <strong>作業時間の大幅短縮</strong>
+              <p>数日単位の作業が、数時間以内に短縮可能。</p>
+            </div>
+          </div>
+          
+          <div class="summary-item">
+            <div class="summary-icon">🎯</div>
+            <div class="summary-text">
+              <strong>分類の精度・品質向上</strong>
+              <p>一定基準で網羅的に分類ができ、主観や疲労によるミスを削減。</p>
+            </div>
+          </div>
+          
+          <div class="summary-item">
+            <div class="summary-icon">🔄</div>
+            <div class="summary-text">
+              <strong>再分析のハードルを大幅に軽減</strong>
+              <p>他のパターン検討や分析条件の変更が容易に行える。</p>
+            </div>
+          </div>
+          
+          <div class="summary-item">
+            <div class="summary-icon">😌</div>
+            <div class="summary-text">
+              <strong>現場の心理的負担軽減</strong>
+              <p>作業者の心理的ストレス・負担を大幅に軽減し、本質的な業務へ集中可能。</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="section">
+          <div class="section-header">
+            <span class="section-icon">💡</span>
+            <h2 class="section-title">活用のポイント</h2>
+          </div>
+          
+          <div class="note" style="margin-bottom: 15px;">
+            <span>💼</span> <strong>最適な活用シーン</strong>：大量の非構造化テキストデータの分類・分析が必要な場合
+          </div>
+          
+          <div class="bullet-list">
+            <div class="bullet-item">
+              <strong>顧客からの問い合わせやフィードバック</strong>の分類
+            </div>
+            <div class="bullet-item">
+              <strong>アンケートの自由記述欄</strong>の分析
+            </div>
+            <div class="bullet-item">
+              <strong>社内文書や報告書</strong>の整理・分類
+            </div>
+            <div class="bullet-item">
+              <strong>SNSなどの投稿やコメント</strong>の感情分析
+            </div>
+          </div>
+          
+          <div style="background-color: rgba(128, 84, 229, 0.1); padding: 15px; border-radius: 12px; margin-top: 20px;">
+            <p style="text-align: center; font-weight: bold; margin-bottom: 10px;">
+              <span style="font-size: 20px;">📣</span> LLM活用のキーポイント
+            </p>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+              <div style="background-color: white; padding: 10px; border-radius: 8px; flex: 1; min-width: 80px; text-align: center; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);">
+                <span style="font-size: 20px;">🎯</span>
+                <p style="font-size: 12px; margin-top: 5px;">明確な指示</p>
+              </div>
+              <div style="background-color: white; padding: 10px; border-radius: 8px; flex: 1; min-width: 80px; text-align: center; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);">
+                <span style="font-size: 20px;">🔄</span>
+                <p style="font-size: 12px; margin-top: 5px;">反復改善</p>
+              </div>
+              <div style="background-color: white; padding: 10px; border-radius: 8px; flex: 1; min-width: 80px; text-align: center; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);">
+                <span style="font-size: 20px;">👁️</span>
+                <p style="font-size: 12px; margin-top: 5px;">人間による確認</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <p>グラフィックレコーディング：LLMを活用した分類作業の効率化 | 作成日：2025年4月8日</p>
+    </div>
+  </div>
+</body>
+</html>
