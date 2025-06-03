@@ -1,1 +1,1 @@
-# gurareko.
+# gurareko
